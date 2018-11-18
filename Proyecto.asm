@@ -6,18 +6,21 @@
 ; CONFIG2
 ; __config 0xFFFF
  __CONFIG _CONFIG2, _BOR4V_BOR40V & _WRT_OFF
-;***************************
-   GPR_VAR        UDATA
-   W_TEMP         RES       1      ; w register for context saving (ACCESS)
-   STATUS_TEMP    RES       1      ; status used for context saving
-   DELAY1	  RES	    1
-   DELAY2	  RES	    1
-   SERVO	  RES	    1
-   SERVO1	  RES	    1
-   CONT		  RES	    1
-   POT3		  RES	    1   
-   CONTP2	  RES	    1
-   POT4		  RES	    1
+;*******************************************************************************
+GPR_VAR        UDATA
+W_TEMP		RES	    1      ; w register for context saving (ACCESS)
+STATUS_TEMP	RES	    1      ; status used for context saving
+DELAY1		RES	    1
+DELAY2		RES	    1
+SERVO2		RES	    1
+SERVO1		RES	    1
+CONT		RES	    1
+POT1		RES	    1   
+CONTP2		RES	    1
+POT4		RES	    1
+SERVO3		RES	    1
+SERVO4		RES	    1
+
 ;*******************************************************************************
 ; Reset Vector
 ;*******************************************************************************
@@ -45,7 +48,8 @@ POP:
     RETFIE
 ;*******************************************************************************
 ; MAIN PROGRAM
-    MAIN_PROG CODE                      ; let linker place main program
+;*******************************************************************************
+MAIN_PROG CODE                      ; let linker place main program
 
 START
 ;*******************************************************************************
@@ -60,9 +64,11 @@ START
 ;*******************************************************************************
 ; LIMPIEZA DE VARIABLES
 ;*******************************************************************************
-   CLRF	    SERVO
+   CLRF	    SERVO2
    CLRF	    SERVO1
-   CLRF	    POT3
+   CLRF	    SERVO3
+   CLRF	    SERVO4
+   CLRF	    POT1
    CLRF	    POT4
 ;*******************************************************************************
 ; MACROS
@@ -80,7 +86,7 @@ RUN	MACRO	VAR, PUERTO, PIN
 ; MAIN LOOP
 ;*******************************************************************************
 LOOP:
-    BCF ADCON0, CHS3		; CH0
+    BCF ADCON0, CHS3		    ; CH0
     BCF ADCON0, CHS2
     BCF ADCON0, CHS1
     BCF ADCON0, CHS0
@@ -90,38 +96,39 @@ VERADC1:
     BTFSC   ADCON0, GO		    ; REVISA SI LA CONVERSIÓN SE COMPLETÓ
     GOTO    VERADC1		    ; SI NO, REVISA OTRA VEZ
     MOVF    ADRESH, W		    ; MUEVE LOS BITS DEL ADRESH A W
-    MOVWF   POT3		    ; LOS MUEVE A UNA VARIABLE
+    MOVWF   POT1		    ; LOS MUEVE A UNA VARIABLE
+    MOVWF   SERVO1
     BCF	    PIR1, ADIF	
       
-    BCF ADCON0, CHS3		; CH1
+    BCF ADCON0, CHS3		    ; CH1
     BCF ADCON0, CHS2
     BCF ADCON0, CHS1
     BSF ADCON0, CHS0
     CALL    DELAY_50MS
     BSF	    ADCON0, GO		    ; EMPIEZA LA CONVERSIÓN
 VERADC2:
-    BTFSC   ADCON0, GO			; revisa que terminó la conversión
+    BTFSC   ADCON0, GO		    ; revisa que terminó la conversión
     GOTO    VERADC2
-    BCF	    PIR1, ADIF			; borramos la bandera del adc
+    BCF	    PIR1, ADIF		    ; borramos la bandera del adc
     MOVFW   ADRESH
-    MOVWF   SERVO		; MOVEMOS EL VALOR HACIA VARIABLE SERVO
-    MOVWF   CCPR2L			; MOVEMOS EL VALOR HACIA EL PERÍODO DEL PWM
+    MOVWF   SERVO2		    ; MOVEMOS EL VALOR HACIA VARIABLE SERVO
+    MOVWF   CCPR2L		    ; MOVEMOS EL VALOR HACIA EL PERÍODO DEL PWM
     
-    BCF ADCON0, CHS3		; CH2
+    BCF ADCON0, CHS3		    ; CH2
     BCF ADCON0, CHS2
     BSF ADCON0, CHS1
     BCF ADCON0, CHS0
     CALL    DELAY_50MS
     BSF	    ADCON0, GO		    ; EMPIEZA LA CONVERSIÓN
 VERADC3:
-    BTFSC   ADCON0, GO			; revisa que terminó la conversión
+    BTFSC   ADCON0, GO		    ; revisa que terminó la conversión
     GOTO    VERADC3
-    BCF	    PIR1, ADIF			; borramos la bandera del adc
+    BCF	    PIR1, ADIF		    ; borramos la bandera del adc
     MOVFW   ADRESH
-    MOVWF   SERVO		; MOVEMOS EL VALOR HACIA VARIABLE SERVO
-    MOVWF   CCPR1L			; MOVEMOS EL VALOR HACIA EL PERÍODO DEL PWM
+    MOVWF   SERVO3		    ; MOVEMOS EL VALOR HACIA VARIABLE SERVO
+    MOVWF   CCPR1L		    ; MOVEMOS EL VALOR HACIA EL PERÍODO DEL PWM
     
-    BCF ADCON0, CHS3		; CH3
+    BCF ADCON0, CHS3		    ; CH3
     BCF ADCON0, CHS2
     BSF ADCON0, CHS1
     BSF ADCON0, CHS0
@@ -132,19 +139,41 @@ VERADC4:
     GOTO    VERADC4		    ; SI NO, REVISA OTRA VEZ
     MOVF    ADRESH, W		    ; MUEVE LOS BITS DEL ADRESH A W
     MOVWF   POT4		    ; LOS MUEVE A UNA VARIABLE
+    MOVWF   SERVO4
     BCF	    PIR1, ADIF	
 
 CHECK_RCIF:			    ; RECIBE EN RX y lo manda al registro que controla al servo
     BTFSS   PIR1, RCIF
     GOTO    CHECK_TXIF
     MOVF    RCREG, W
+    MOVWF   POT1
+    CALL    DELAY_500US
+    MOVF    RCREG, W
     MOVWF   CCPR2L
+    CALL    DELAY_500US
+    MOVF    RCREG, W
+    MOVWF   CCPR1L
+    CALL    DELAY_500US
+    MOVF    RCREG, W
+    MOVWF   POT4
     
 CHECK_TXIF: 
     BTFSS   PIR1, TXIF
     GOTO    CHECK_TXIF
-    MOVFW   SERVO		    ; ENVÍA SERVO POR EL TX
+    MOVFW   SERVO1		    ; ENVÍA SERVO1 POR EL TX
     MOVWF   TXREG
+    CALL    DELAY_500US
+    MOVFW   SERVO2		    ; ENVÍA SERVO2 POR EL TX
+    MOVWF   TXREG
+    CALL    DELAY_500US
+    MOVFW   SERVO3		    ; ENVÍA SERVO3 POR EL TX
+    MOVWF   TXREG
+    CALL    DELAY_500US
+    MOVFW   SERVO4		    ; ENVÍA SERVO4 POR EL TX
+    MOVWF   TXREG
+    CALL    DELAY_500US
+    MOVLW   .13
+    MOVWF   TXREG		    ; ENVÍA 13 PARA INDICAR QUE YA MANDÓ LOS 4 VALORES
    
     GOTO LOOP
 ;*******************************************************************************
@@ -153,12 +182,12 @@ PWMA:
     MOVLW   .252		    ; N PARA UN PERÍODO DE 500 MS
     MOVWF   TMR0
     MOVLW   .0
-    SUBWF   POT3,0		    ; REVISA SI EL POTENCIÓMTERO 3 ESTÁ EN CERO
+    SUBWF   POT1,0		    ; REVISA SI EL POTENCIÓMTERO 3 ESTÁ EN CERO
     BTFSC   STATUS, Z
     CALL    NOMOVER1		    ; SUB RUTINA 
     RUN	    CONT, PORTC, 0			    ; 
     CONTINUAR
-    MOVF    POT3,0
+    MOVF    POT1,0
     SUBWF   CONT
     BTFSS   STATUS, C
     BCF	    PORTC, 0
