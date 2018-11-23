@@ -21,6 +21,8 @@ POT4		RES	    1
 SERVO3		RES	    1
 SERVO4		RES	    1
 MOVO		RES	    1
+PARA1		RES         1
+PARA4		RES	    1
 
 ;*******************************************************************************
 ; Reset Vector
@@ -71,6 +73,8 @@ START
    CLRF	    SERVO4
    CLRF	    POT1
    CLRF	    POT4
+   CLRF	    PARA1
+   CLRF	    PARA4
 ;*******************************************************************************
 ; MACROS
 ;*******************************************************************************
@@ -96,38 +100,46 @@ LOOP:
 VERADC1:
     BTFSC   ADCON0, GO		    ; REVISA SI LA CONVERSIÓN SE COMPLETÓ
     GOTO    VERADC1		    ; SI NO, REVISA OTRA VEZ
-    MOVF    ADRESH, W		    ; MUEVE LOS BITS DEL ADRESH A W
-   ; MOVWF   POT1		    ; LOS MUEVE A UNA VARIABLE
-    MOVWF   SERVO1
     BCF	    PIR1, ADIF	
+    MOVF    ADRESH, W		    ; MUEVE LOS BITS DEL ADRESH A W
+    ;MOVWF   POT1		    ; LOS MUEVE A UNA VARIABLE
+    MOVWF   SERVO1
     
-    MOVLW   .126	    ; LÍMITE INFERIOR 
-    SUBWF   SERVO1, W	    ; REVISA SI EL VALOR DEL SERVO ES MENOR AL LIMITE INFERIOR
-    BTFSC   STATUS, C	    ; REVISA SU EL SERVO ESTA EN EL PRIMER INTERVALO
-    GOTO    CONTINUAR1	    ; REVISA SI EL SERVO ESTÁ EN SIGUIENTE INTERVALO
-    MOVF    POT1, W	    ; REVISA SI TODAVÍA PUEDE INCREMENTAR EL PWM
-    XORLW   0FFh	    ; PARA QUE NO PASE DE 255
-    BTFSC   STATUS, Z	    ; REVISA
-    GOTO    CONTINUAR1	    ; SI ES 255 NO INCREMENTA  
-    INCF    POT1, F	    ; SI NO ES 255 INCREMENTA
-    INCF    POT1, F
-    INCF    POT1, F
-    INCF    POT1, F
+    MOVLW   .101	    ; 
+    SUBWF   SERVO1, W	    ; 
+    BTFSC   STATUS, C	    ; 
+    GOTO    CONTINUAR1	    ; 
+    MOVF    PARA1, W
+    XORLW   0FFh
+    BTFSC   STATUS, Z	    ; 
+    GOTO    CONTINUAR1	    ; 
+    INCF    PARA1, F
+    INCF    PARA1, F
+    INCF    PARA1, F
+    INCF    PARA1, F
+    INCF    PARA1, F
+    INCF    PARA1, F
+    INCF    PARA1, F
     GOTO    SEGUIR1
 CONTINUAR1
-    MOVLW   .176	    ; LÍMITE SUPERIOR
-    SUBWF   SERVO1,   W	    ; REVISAR SI EL VALOR DEL SERVO ES MAYOR AL LIMITE SUPERIOR
-    BTFSS   STATUS, C	    ; REVISA SI EL SERVO ESTA EN EL TERCER INTERVALO
-    GOTO    SEGUIR1	    ; SI NO, SIGUE 
-    MOVF    POT1, W	    ; SI ESTA, REVISA SI PUEDE DECREMENTAR
-    XORLW   .0		    ; PARA QUE NO BAJE DE 0
-    BTFSC   STATUS, Z	    ; REVISA
-    GOTO    SEGUIR1	    ; SI ESTA EN 0 NO DECREMENTA
-    DECF    POT1, F	    ; DECREMENTA EL VALOR DEL PWM SI ESTABA EN 0
-    DECF    POT1, F
-    DECF    POT1, F
-    DECF    POT1, F
+    MOVLW   .151	    ; 
+    SUBWF   SERVO1, W	    ; 
+    BTFSS   STATUS, C	    ; 
+    GOTO    SEGUIR1	    ; 
+    MOVF    PARA1, W
+    XORLW   .0
+    BTFSC   STATUS, Z	    ; 
+    GOTO    SEGUIR1
+    DECF    PARA1, F
+    DECF    PARA1, F
+    DECF    PARA1, F
+    DECF    PARA1, F
+    DECF    PARA1, F
+    DECF    PARA1, F
+    DECF    PARA1, F
     SEGUIR1
+    MOVF    PARA1, W
+    MOVWF   POT1
     
     BCF ADCON0, CHS3		    ; CH1
     BCF ADCON0, CHS2
@@ -222,38 +234,46 @@ CONTINUAR3
 VERADC4:
     BTFSC   ADCON0, GO		    ; REVISA SI LA CONVERSIÓN SE COMPLETÓ
     GOTO    VERADC4		    ; SI NO, REVISA OTRA VEZ
+    BCF	    PIR1, ADIF	
     MOVF    ADRESH, W		    ; MUEVE LOS BITS DEL ADRESH A W
     ;MOVWF   POT4		    ; LOS MUEVE A UNA VARIABLE
     MOVWF   SERVO4
-    BCF	    PIR1, ADIF	
     
-    MOVLW   .126	    ; LÍMITE INFERIOR 
-    SUBWF   SERVO4, W	    ; REVISA SI EL VALOR DEL SERVO ES MENOR AL LIMITE INFERIOR
-    BTFSC   STATUS, C	    ; REVISA SU EL SERVO ESTA EN EL PRIMER INTERVALO
-    GOTO    CONTINUAR4	    ; REVISA SI EL SERVO ESTÁ EN SIGUIENTE INTERVALO
-    MOVF    POT4, W	    ; REVISA SI TODAVÍA PUEDE INCREMENTAR EL PWM
-    XORLW   0FFh	    ; PARA QUE NO PASE DE 255
-    BTFSC   STATUS, Z	    ; REVISA
-    GOTO    CONTINUAR4	    ; SI ES 255 NO INCREMENTA  
-    INCF    POT4, F	    ; SI NO ES 255 INCREMENTA
-    INCF    POT4, F
-    INCF    POT4, F
-    INCF    POT4, F
+    MOVLW   .101	    ; 
+    SUBWF   SERVO4, W	    ; 
+    BTFSC   STATUS, C	    ; 
+    GOTO    CONTINUAR4	    ; 
+    MOVF    PARA4, W
+    XORLW   0FFh
+    BTFSC   STATUS, Z	    ; 
+    GOTO    CONTINUAR4	    ; 
+    INCF    PARA4, F
+    INCF    PARA4, F
+    INCF    PARA4, F
+    INCF    PARA4, F
+    INCF    PARA4, F
+    INCF    PARA4, F
+    INCF    PARA4, F
     GOTO    SEGUIR4
 CONTINUAR4
-    MOVLW   .176	    ; LÍMITE SUPERIOR
-    SUBWF   SERVO4,   W	    ; REVISAR SI EL VALOR DEL SERVO ES MAYOR AL LIMITE SUPERIOR
-    BTFSS   STATUS, C	    ; REVISA SI EL SERVO ESTA EN EL TERCER INTERVALO
-    GOTO    SEGUIR4	    ; SI NO, SIGUE 
-    MOVF    POT4, W	    ; SI ESTA, REVISA SI PUEDE DECREMENTAR
-    XORLW   .0		    ; PARA QUE NO BAJE DE 0
-    BTFSC   STATUS, Z	    ; REVISA
-    GOTO    SEGUIR4	    ; SI ESTA EN 0 NO DECREMENTA
-    DECF    POT4, F	    ; DECREMENTA EL VALOR DEL PWM SI ESTABA EN 0
-    DECF    POT4, F
-    DECF    POT4, F
-    DECF    POT4, F
+    MOVLW   .151	    ; 
+    SUBWF   SERVO4, W	    ; 
+    BTFSS   STATUS, C	    ; 
+    GOTO    SEGUIR4	    ; 
+    MOVF    PARA4, W
+    XORLW   .0
+    BTFSC   STATUS, Z	    ; 
+    GOTO    SEGUIR4
+    DECF    PARA4, F
+    DECF    PARA4, F
+    DECF    PARA4, F
+    DECF    PARA4, F
+    DECF    PARA4, F
+    DECF    PARA4, F
+    DECF    PARA4, F
     SEGUIR4
+    MOVF    PARA4, W
+    MOVWF   POT4
 
 CHECK_RCIF:			    ; RECIBE EN RX y lo manda al registro que controla al servo
     BTFSS   PIR1, RCIF
